@@ -1,7 +1,5 @@
 
-
-### 1. Basic Usage
-
+**Sample**
 ```python
 from pcb_inspector import PCBInspector
 
@@ -30,11 +28,3 @@ result = inspector.inspect_pcb("path/to/pcb_image.jpg")
 }
 ```
 
-## Files
-
-- `pcb_inspector.py` - Main inspector class
-- `simple_example.py` - Basic example
-
-The module automatically loads:
-- Model: `best(2).pt` (local)
-- Template: `golden_template.json` (local)
