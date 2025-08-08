@@ -23,7 +23,7 @@ class PCBInspector:
             template_path: Path to golden template JSON file  
         """
         self.base_path = os.path.dirname(os.path.abspath(__file__))
-        self.model_path = model_path or os.path.join(self.base_path, 'best(4).pt')
+        self.model_path = model_path or os.path.join(self.base_path, 'best.pt')
         self.template_path = template_path or os.path.join(self.base_path, 'golden_template_relative.json')
         
         # Load model and template
@@ -212,87 +212,27 @@ class PCBInspector:
                 detected_components[class_name].append(center)
         
         return detected_components
-    
-    def _transform_template_position(self, template_pos, transformation_matrix):
-        """Transform template position to image coordinates."""
-        template_point = np.array([[template_pos[0], template_pos[1], 1]], dtype=np.float32)
-        transformed_point = template_point @ transformation_matrix.T
-        return [int(transformed_point[0][0]), int(transformed_point[0][1])]
-    
-    def _analyze_m3x6_with_anchor_proximity(self, detected_m3x6_positions, anchor3_pos, transformation):
-        """Analyze M3x6 positions using rotation-aware positioning."""
-        if transformation is None:
-            return {'missing_info': []}
-        
-        missing_m3x6 = []
-        matched_m3x6 = []
-        
-        # Get M3x6 template positions and transform them
-        m3x6_templates = []
-        for comp_template in self.template['components_relative']:
-            if comp_template['class_name'] == 'M3x6':
-                template_rel_vec = np.array(comp_template['relative_vector'])
-                transformed_rel_vec = transformation['rotation_scale_matrix'] @ template_rel_vec
-                expected_pos = transformation['translation'] + transformed_rel_vec
-                m3x6_templates.append({
-                    'expected_pos': expected_pos,
-                    'template_vector': template_rel_vec
-                })
-        
-        # Match detected M3x6 positions to expected positions
-        remaining_detected = detected_m3x6_positions.copy()
-        
-        for i, template in enumerate(m3x6_templates):
-            expected_pos = template['expected_pos']
-            
-            if remaining_detected:
-                # Find closest detected M3x6
-                min_distance = float('inf')
-                closest_detected = None
-                closest_index = -1
-                
-                for j, detected_pos in enumerate(remaining_detected):
-                    distance = np.linalg.norm(np.array(detected_pos) - expected_pos)
-                    if distance < min_distance:
-                        min_distance = distance
-                        closest_detected = detected_pos
-                        closest_index = j
-                
-                # Check if match is good enough (within 100px)
-                if min_distance < 100:
-                    matched_m3x6.append({
-                        'detected_pos': closest_detected,
-                        'expected_pos': expected_pos.astype(int).tolist(),
-                        'distance': min_distance,
-                        'label': f"M3x6 #{i+1}"
-                    })
-                    remaining_detected.pop(closest_index)
-                else:
-                    # Too far - consider missing
-                    missing_m3x6.append({
-                        'position': expected_pos.astype(int).tolist(),
-                        'label': f"M3x6 #{i+1}",
-                        'template_pos': template['template_vector'].tolist()
-                    })
-            else:
-                # No more detected M3x6 - this one is missing
-                missing_m3x6.append({
-                    'position': expected_pos.astype(int).tolist(),
-                    'label': f"M3x6 #{i+1}",
-                    'template_pos': template['template_vector'].tolist()
-                })
-        
-        return {
-            'missing_info': missing_m3x6,
-            'matched_info': matched_m3x6
-        }
-    
+
     def _check_missing_components(self, detected_components, transformation, anchors):
         """Check for missing components using rotation-aware positioning."""
         errors = []
         
-        # Analyze each component type from template
+        # Special handling for M3x6 components (need to match pairs correctly)
+        m3x6_templates = []
+        other_templates = []
+        
         for comp_template in self.template['components_relative']:
+            if comp_template['class_name'] == 'M3x6':
+                m3x6_templates.append(comp_template)
+            else:
+                other_templates.append(comp_template)
+        
+        # Process M3x6 components with proper pairing logic
+        if m3x6_templates:
+            errors.extend(self._check_m3x6_components(m3x6_templates, detected_components, transformation, anchors))
+        
+        # Process other components normally
+        for comp_template in other_templates:
             comp_type = comp_template['class_name']
             template_rel_vec = np.array(comp_template['relative_vector'])
             
@@ -300,8 +240,8 @@ class PCBInspector:
             transformed_rel_vec = transformation['rotation_scale_matrix'] @ template_rel_vec
             expected_pos = transformation['translation'] + transformed_rel_vec
             
-            # Check if this component type was detected
-            if comp_type in detected_components:
+            # Check if this component type was detected AND has available instances
+            if comp_type in detected_components and len(detected_components[comp_type]) > 0:
                 detected_positions = detected_components[comp_type].copy()
                 
                 # Find closest detected component to expected position
@@ -318,24 +258,14 @@ class PCBInspector:
                 if closest_detected is not None:
                     detected_components[comp_type].remove(closest_detected)
             else:
-                # Component type not detected at all
+                # Component type not detected at all OR no more instances available
                 position_info = {'expected_pos': expected_pos.astype(int).tolist()}
                 if comp_type == 'Connector 2P':
                     anchor1_distance = np.linalg.norm(expected_pos - np.array(anchors['anchor1']['center']))
                     position_info['anchor1_distance'] = anchor1_distance
                     position_info['threshold'] = 500
-                elif comp_type == 'M3x6':
-                    # Determine which M3x6 based on proximity to anchor3
-                    anchor3_distance = np.linalg.norm(expected_pos - np.array(anchors['anchor 3']['center']))
-                    anchor1_distance = np.linalg.norm(expected_pos - np.array(anchors['anchor1']['center']))
-                    if anchor3_distance < anchor1_distance:
-                        position_info['label'] = 'M3x6 #2'  # Closer to anchor3 (left)
-                    else:
-                        position_info['label'] = 'M3x6 #1'  # Closer to anchor1 (right)
                 
                 description_text = f"Missing {comp_type} (not detected)"
-                if comp_type == 'M3x6' and 'label' in position_info:
-                    description_text = f"Missing {position_info['label']} (not detected)"
                 
                 errors.append({
                     "error": self._get_error_code_for_component(comp_type, position_info),
@@ -343,6 +273,71 @@ class PCBInspector:
                     "position": expected_pos.astype(int).tolist(),
                     "description": description_text
                 })
+        
+        return errors
+
+    def _check_m3x6_components(self, m3x6_templates, detected_components, transformation, anchors):
+        """Special handling for M3x6 components with correct labeling."""
+        errors = []
+        
+        # Transform all M3x6 template positions
+        transformed_templates = []
+        for i, comp_template in enumerate(m3x6_templates):
+            template_rel_vec = np.array(comp_template['relative_vector'])
+            transformed_rel_vec = transformation['rotation_scale_matrix'] @ template_rel_vec
+            expected_pos = transformation['translation'] + transformed_rel_vec
+            
+            # Determine label based on template position relative to anchor3
+            anchor3_distance = np.linalg.norm(expected_pos - np.array(anchors['anchor 3']['center']))
+            anchor1_distance = np.linalg.norm(expected_pos - np.array(anchors['anchor1']['center']))
+            
+            label = 'M3x6 #2' if anchor3_distance < anchor1_distance else 'M3x6 #1'
+            
+            transformed_templates.append({
+                'expected_pos': expected_pos,
+                'template_vector': template_rel_vec,
+                'label': label,
+                'template_index': i
+            })
+        
+        # Get detected M3x6 positions
+        detected_m3x6 = detected_components.get('M3x6', []).copy()
+        
+        # Match detected M3x6 to expected positions
+        matched_templates = []
+        
+        for template in transformed_templates:
+            expected_pos = template['expected_pos']
+            closest_detected = None
+            min_distance = float('inf')
+            closest_index = -1
+            
+            # Find closest detected M3x6 to this template position
+            for j, detected_pos in enumerate(detected_m3x6):
+                distance = np.linalg.norm(np.array(detected_pos) - expected_pos)
+                if distance < min_distance:
+                    min_distance = distance
+                    closest_detected = detected_pos
+                    closest_index = j
+            
+            # If found a reasonable match (within 200px), consider it matched
+            if closest_detected is not None and min_distance < 200:
+                matched_templates.append(template)
+                detected_m3x6.pop(closest_index)  # Remove from available list
+            else:
+                # This M3x6 position is missing
+                position_info = {'label': template['label']}
+                
+                errors.append({
+                    "error": self._get_error_code_for_component('M3x6', position_info),
+                    "component": 'M3x6', 
+                    "position": expected_pos.astype(int).tolist(),
+                    "description": f"Missing {template['label']} (not detected)"
+                })
+        
+        # Clear the M3x6 from detected_components since we handled them
+        if 'M3x6' in detected_components:
+            detected_components['M3x6'] = []
         
         return errors
     
@@ -389,126 +384,6 @@ class PCBInspector:
         
         return result_img
     
-    def _get_missing_component_positions(self, class_name, expected_count, detected_positions, transformation_matrix, anchors):
-        """Get missing component positions and error codes."""
-        errors = []
-        
-        # Get all template positions for this component
-        template_positions = []
-        for comp in self.template['components_to_check']:
-            if comp['class_name'] == class_name:
-                template_positions.append(comp['golden_center'])
-        
-        if class_name == 'Connector 2P' and len(template_positions) == 2:
-            # Handle connector 2p with anchor1 distance logic
-            anchor1_pos = anchors.get('anchor1', {}).get('center', [0, 0])
-            
-            # Transform template positions
-            transformed_positions = []
-            for template_pos in template_positions:
-                transformed_pos = self._transform_template_position(template_pos, transformation_matrix)
-                distance_to_anchor1 = np.linalg.norm(np.array(transformed_pos) - np.array(anchor1_pos))
-                transformed_positions.append({
-                    'pos': transformed_pos,
-                    'distance_to_anchor1': distance_to_anchor1
-                })
-            
-            # Sort by distance to anchor1 (closest first)
-            transformed_positions.sort(key=lambda x: x['distance_to_anchor1'])
-            
-            if len(detected_positions) == 0:
-                # Both missing
-                for i, pos_info in enumerate(transformed_positions):
-                    error_code = self._get_error_code_for_component(
-                        class_name, 
-                        {'anchor1_distance': pos_info['distance_to_anchor1'], 'threshold': 400}
-                    )
-                    errors.append(self._create_missing_error(error_code, pos_info['pos']))
-            
-            elif len(detected_positions) == 1:
-                # One missing - determine which one
-                detected_pos = detected_positions[0]
-                detected_distance = np.linalg.norm(np.array(detected_pos) - np.array(anchor1_pos))
-                
-                # Find which template position is closer to detected
-                closer_to_template1 = abs(detected_distance - transformed_positions[0]['distance_to_anchor1']) < \
-                                    abs(detected_distance - transformed_positions[1]['distance_to_anchor1'])
-                
-                missing_idx = 1 if closer_to_template1 else 0
-                missing_pos_info = transformed_positions[missing_idx]
-                
-                error_code = self._get_error_code_for_component(
-                    class_name,
-                    {'anchor1_distance': missing_pos_info['distance_to_anchor1'], 'threshold': 400}
-                )
-                errors.append(self._create_missing_error(error_code, missing_pos_info['pos']))
-        
-        else:
-            # Handle other components (single instance expected)
-            if template_positions:
-                template_pos = template_positions[0]
-                transformed_pos = self._transform_template_position(template_pos, transformation_matrix)
-                error_code = self._get_error_code_for_component(class_name)
-                errors.append(self._create_missing_error(error_code, transformed_pos))
-        
-        return errors
-    
-    def inspect_pcb_with_visual(self, image_path: str, output_path: str = None) -> Dict[str, Any]:
-        """
-        Inspect PCB and create visual output with enhanced missing component visualization.
-        
-        Args:
-            image_path: Path to PCB image
-            output_path: Path for output image (optional)
-            
-        Returns:
-            Dict containing inspection results with visual output path
-        """
-        # Use the new inspect_pcb method
-        result, annotated_image = self.inspect_pcb(image_path)
-        
-        # Save the annotated image if provided
-        if annotated_image is not None:
-            if output_path is None:
-                import datetime
-                timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-                output_path = f"inspection_visual_{timestamp}.jpg"
-            
-            cv2.imwrite(output_path, annotated_image)
-            result['visual_output'] = output_path
-        
-        return result
-    
-    def _process_m3x6_analysis(self, m3x6_analysis):
-        """Process M3x6 analysis results and return error list."""
-        errors = []
-        
-        for missing_m3x6 in m3x6_analysis.get('missing_info', []):
-            pos = missing_m3x6['position']
-            label = missing_m3x6['label']
-            
-            # Create polygon around the expected position
-            box_size = 75
-            coordinates = [
-                [pos[0] - box_size, pos[1] - box_size],
-                [pos[0] + box_size, pos[1] - box_size],
-                [pos[0] + box_size, pos[1] + box_size],
-                [pos[0] - box_size, pos[1] + box_size]
-            ]
-            
-            error_code = self._get_error_code_for_component('M3x6', {'label': label})
-            
-            errors.append({
-                "error": error_code,
-                "severity": "WARNING",
-                "area_of_error": {
-                    "type": "polygon",
-                    "coordinates": coordinates
-                }
-            })
-        
-        return errors
-    
     def _create_error_result(self, source_id: str, timestamp: float, error_code: str, severity: str):
         """Create error result for system failures."""
         return {
@@ -516,10 +391,6 @@ class PCBInspector:
             "timestamp": timestamp,
             "errors": [{
                 "error": error_code,
-                "severity": severity,
-                "area_of_error": {
-                    "type": "rectangle",
-                    "coordinates": [[0, 0], [0, 0], [0, 0], [0, 0]]
-                }
+                "severity": severity
             }]
         }
