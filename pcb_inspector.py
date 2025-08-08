@@ -292,7 +292,6 @@ class PCBInspector:
                     errors.append({
                         "error_code": f"MISSING_{class_name.upper()}",
                         "severity": "WARNING",
-                        "confidence": 0.95,
                         "area_of_error": {
                             "type": "polygon",
                             "coordinates": coordinates
@@ -320,8 +319,7 @@ class PCBInspector:
             
             errors.append({
                 "error_code": f"MISSING_{label.upper().replace(' ', '_')}",
-                "severity": "WARNING", 
-                "confidence": 0.90,
+                "severity": "WARNING",
                 "area_of_error": {
                     "type": "polygon",
                     "coordinates": coordinates
@@ -338,7 +336,6 @@ class PCBInspector:
             "errors": [{
                 "error_code": error_code,
                 "severity": severity,
-                "confidence": 0.0,
                 "area_of_error": {
                     "type": "rectangle",
                     "coordinates": [[0, 0], [0, 0], [0, 0], [0, 0]]

@@ -17,8 +17,7 @@ result = inspector.inspect_pcb("path/to/pcb_image.jpg")
   "errors": [
     {
       "error_code": "MISSING_M3X6_#1",
-      "severity": "WARNING", 
-      "confidence": 0.90,
+      "severity": "WARNING",
       "area_of_error": {
         "type": "polygon",
         "coordinates": [[x1,y1], [x2,y2], [x3,y3], [x4,y4]]
