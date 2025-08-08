@@ -131,6 +131,7 @@ class PCBInspector:
             else:
                 adjusted_image = cv2.convertScaleAbs(image, alpha=1.0, beta=beta)
             
+            # Use simple Ultralytics prediction with default settings (no custom thresholds)
             results = self.model.predict(adjusted_image, verbose=False)
             result = results[0]
             
@@ -313,37 +314,8 @@ class PCBInspector:
                         min_distance = distance
                         closest_detected = detected_pos
                 
-                # Distance threshold for rotation cases
-                distance_threshold = 100
-                if min_distance >= distance_threshold:
-                    # Component is missing - too far from expected position
-                    position_info = {'expected_pos': expected_pos.astype(int).tolist()}
-                    if comp_type == 'Connector 2P':
-                        # Add anchor1 distance for Connector 2P analysis
-                        anchor1_distance = np.linalg.norm(expected_pos - np.array(anchors['anchor1']['center']))
-                        position_info['anchor1_distance'] = anchor1_distance
-                        position_info['threshold'] = 500
-                    elif comp_type == 'M3x6':
-                        # Determine which M3x6 based on proximity to anchor3
-                        anchor3_distance = np.linalg.norm(expected_pos - np.array(anchors['anchor 3']['center']))
-                        anchor1_distance = np.linalg.norm(expected_pos - np.array(anchors['anchor1']['center']))
-                        if anchor3_distance < anchor1_distance:
-                            position_info['label'] = 'M3x6 #2'  # Closer to anchor3 (left)
-                        else:
-                            position_info['label'] = 'M3x6 #1'  # Closer to anchor1 (right)
-                    
-                    description_text = f"Missing {comp_type} (closest detection {min_distance:.1f}px away)"
-                    if comp_type == 'M3x6' and 'label' in position_info:
-                        description_text = f"Missing {position_info['label']} (closest detection {min_distance:.1f}px away)"
-                    
-                    errors.append({
-                        "error": self._get_error_code_for_component(comp_type, position_info),
-                        "component": comp_type,
-                        "position": expected_pos.astype(int).tolist(),
-                        "description": description_text
-                    })
-                else:
-                    # Component found - remove from list to avoid double matching
+                # Component found - remove from list to avoid double matching
+                if closest_detected is not None:
                     detected_components[comp_type].remove(closest_detected)
             else:
                 # Component type not detected at all

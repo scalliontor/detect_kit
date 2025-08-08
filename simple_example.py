@@ -6,8 +6,7 @@ import datetime
 def main():
     inspector = PCBInspector()
     
-    test_image = "/home/hung/Coding_thing/fanny_kit/d8bbffc6-35af-4ec9-a5a6-e7a486186cb8.jpeg"
-    
+    test_image = "/home/hung/Coding_thing/fanny_kit/dataset/connector4p/a3b1d4ab8c10054e5c0119.jpg"
     result, image = inspector.inspect_pcb(test_image)
     
     print(result)
