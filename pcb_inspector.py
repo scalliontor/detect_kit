@@ -40,6 +40,32 @@ class PCBInspector:
         except Exception as e:
             raise RuntimeError(f"Failed to load resources: {e}")
     
+    def _get_error_code_for_component(self, class_name, position_info=None):
+        """Get Vietnamese error code for component."""
+        error_map = {
+            'Jack 24V': 'Error-03',
+            'Connector 4P': 'Error-04', 
+            'Connector 3P': 'Error-07'
+        }
+        
+        if class_name == 'M3x6':
+            if position_info and 'label' in position_info:
+                if 'M3x6 #2' in position_info['label']:  # Closer to anchor3 (left)
+                    return 'Error-01'
+                else:  # M3x6 #1 (right)
+                    return 'Error-02'
+            return 'Error-01'  # Default
+        
+        if class_name == 'Connector 2P':
+            if position_info and 'anchor1_distance' in position_info:
+                if position_info['anchor1_distance'] < position_info.get('threshold', 500):
+                    return 'Error-05'  # Closer to anchor1 (van)
+                else:
+                    return 'Error-06'  # Further from anchor1 (điện cực)
+            return 'Error-05'  # Default
+        
+        return error_map.get(class_name, f'Error-Unknown-{class_name}')
+    
     def inspect_pcb(self, image_path: str, source_id: str = "camera_01") -> Dict[str, Any]:
         """
         Inspect PCB image and return structured results.
@@ -80,7 +106,7 @@ class PCBInspector:
             )
             
             # Check for missing components
-            errors.extend(self._check_missing_components(detected_components, transformation_matrix))
+            errors.extend(self._check_missing_components(detected_components, transformation_matrix, anchors))
             errors.extend(self._process_m3x6_analysis(m3x6_analysis))
             
         except Exception as e:
@@ -252,7 +278,7 @@ class PCBInspector:
         
         return {'missing_info': missing_m3x6}
     
-    def _check_missing_components(self, detected_components, transformation_matrix):
+    def _check_missing_components(self, detected_components, transformation_matrix, anchors):
         """Check for missing components and return error list."""
         errors = []
         
@@ -270,35 +296,99 @@ class PCBInspector:
             missing_count = expected_count - detected_count
             
             if missing_count > 0:
-                # Find template position for missing component
-                template_pos = None
-                for comp in self.template['components_to_check']:
-                    if comp['class_name'] == class_name:
-                        template_pos = comp['golden_center']
-                        break
+                # Handle multiple missing instances
+                missing_components = self._get_missing_component_positions(
+                    class_name, expected_count, detected_components.get(class_name, []), 
+                    transformation_matrix, anchors
+                )
                 
-                if template_pos and transformation_matrix is not None:
-                    transformed_pos = self._transform_template_position(template_pos, transformation_matrix)
-                    
-                    # Create polygon around the expected position (rectangle)
-                    box_size = 75  # Half the size of visual indicator
-                    coordinates = [
-                        [transformed_pos[0] - box_size, transformed_pos[1] - box_size],
-                        [transformed_pos[0] + box_size, transformed_pos[1] - box_size],
-                        [transformed_pos[0] + box_size, transformed_pos[1] + box_size],
-                        [transformed_pos[0] - box_size, transformed_pos[1] + box_size]
-                    ]
-                    
-                    errors.append({
-                        "error_code": f"MISSING_{class_name.upper()}",
-                        "severity": "WARNING",
-                        "area_of_error": {
-                            "type": "polygon",
-                            "coordinates": coordinates
-                        }
-                    })
+                for missing_comp in missing_components:
+                    errors.append(missing_comp)
         
         return errors
+    
+    def _get_missing_component_positions(self, class_name, expected_count, detected_positions, transformation_matrix, anchors):
+        """Get missing component positions and error codes."""
+        errors = []
+        
+        # Get all template positions for this component
+        template_positions = []
+        for comp in self.template['components_to_check']:
+            if comp['class_name'] == class_name:
+                template_positions.append(comp['golden_center'])
+        
+        if class_name == 'Connector 2P' and len(template_positions) == 2:
+            # Handle connector 2p with anchor1 distance logic
+            anchor1_pos = anchors.get('anchor1', {}).get('center', [0, 0])
+            
+            # Transform template positions
+            transformed_positions = []
+            for template_pos in template_positions:
+                transformed_pos = self._transform_template_position(template_pos, transformation_matrix)
+                distance_to_anchor1 = np.linalg.norm(np.array(transformed_pos) - np.array(anchor1_pos))
+                transformed_positions.append({
+                    'pos': transformed_pos,
+                    'distance_to_anchor1': distance_to_anchor1
+                })
+            
+            # Sort by distance to anchor1 (closest first)
+            transformed_positions.sort(key=lambda x: x['distance_to_anchor1'])
+            
+            if len(detected_positions) == 0:
+                # Both missing
+                for i, pos_info in enumerate(transformed_positions):
+                    error_code = self._get_error_code_for_component(
+                        class_name, 
+                        {'anchor1_distance': pos_info['distance_to_anchor1'], 'threshold': 400}
+                    )
+                    errors.append(self._create_missing_error(error_code, pos_info['pos']))
+            
+            elif len(detected_positions) == 1:
+                # One missing - determine which one
+                detected_pos = detected_positions[0]
+                detected_distance = np.linalg.norm(np.array(detected_pos) - np.array(anchor1_pos))
+                
+                # Find which template position is closer to detected
+                closer_to_template1 = abs(detected_distance - transformed_positions[0]['distance_to_anchor1']) < \
+                                    abs(detected_distance - transformed_positions[1]['distance_to_anchor1'])
+                
+                missing_idx = 1 if closer_to_template1 else 0
+                missing_pos_info = transformed_positions[missing_idx]
+                
+                error_code = self._get_error_code_for_component(
+                    class_name,
+                    {'anchor1_distance': missing_pos_info['distance_to_anchor1'], 'threshold': 400}
+                )
+                errors.append(self._create_missing_error(error_code, missing_pos_info['pos']))
+        
+        else:
+            # Handle other components (single instance expected)
+            if template_positions:
+                template_pos = template_positions[0]
+                transformed_pos = self._transform_template_position(template_pos, transformation_matrix)
+                error_code = self._get_error_code_for_component(class_name)
+                errors.append(self._create_missing_error(error_code, transformed_pos))
+        
+        return errors
+    
+    def _create_missing_error(self, error_code, position):
+        """Create error object for missing component."""
+        box_size = 75
+        coordinates = [
+            [position[0] - box_size, position[1] - box_size],
+            [position[0] + box_size, position[1] - box_size],
+            [position[0] + box_size, position[1] + box_size],
+            [position[0] - box_size, position[1] + box_size]
+        ]
+        
+        return {
+            "error": error_code,
+            "severity": "WARNING",
+            "area_of_error": {
+                "type": "polygon",
+                "coordinates": coordinates
+            }
+        }
     
     def _process_m3x6_analysis(self, m3x6_analysis):
         """Process M3x6 analysis results and return error list."""
@@ -317,8 +407,10 @@ class PCBInspector:
                 [pos[0] - box_size, pos[1] + box_size]
             ]
             
+            error_code = self._get_error_code_for_component('M3x6', {'label': label})
+            
             errors.append({
-                "error_code": f"MISSING_{label.upper().replace(' ', '_')}",
+                "error": error_code,
                 "severity": "WARNING",
                 "area_of_error": {
                     "type": "polygon",
@@ -334,7 +426,7 @@ class PCBInspector:
             "source_id": source_id,
             "timestamp": timestamp,
             "errors": [{
-                "error_code": error_code,
+                "error": error_code,
                 "severity": severity,
                 "area_of_error": {
                     "type": "rectangle",

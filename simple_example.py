@@ -15,7 +15,7 @@ def main():
     inspector = PCBInspector()
     
     # Test image path
-    test_image = "../dataset/m3phai/045684e7d95c5002094d9.jpg"
+    test_image = "/home/hung/Coding_thing/fanny_kit/dataset/connector_nguon/4d14c36e9dd5148b4dc415.jpg"
     
     if not os.path.exists(test_image):
         print(f"Test image not found: {test_image}")
@@ -25,7 +25,7 @@ def main():
     result = inspector.inspect_pcb(test_image, source_id="example_camera")
     
     # Display results
-    print(json.dumps(result, indent=2))
+    print(result)
 
 
 if __name__ == "__main__":

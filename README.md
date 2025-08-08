@@ -16,7 +16,7 @@ result = inspector.inspect_pcb("path/to/pcb_image.jpg")
   "timestamp": 1722345678.123,
   "errors": [
     {
-      "error_code": "MISSING_M3X6_#1",
+      "error": "Error-01",
       "severity": "WARNING",
       "area_of_error": {
         "type": "polygon",
