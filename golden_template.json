@@ -1,0 +1,336 @@
+{
+    "fiducial_anchors": [
+        {
+            "class_name": "anchor4",
+            "golden_center": [
+                718,
+                977
+            ],
+            "error_code": "Error-Missing-anchor4",
+            "confidence_threshold": 0.5,
+            "area_of_error": {
+                "type": "polygon",
+                "coordinates": [
+                    [
+                        601,
+                        883
+                    ],
+                    [
+                        834,
+                        883
+                    ],
+                    [
+                        834,
+                        1071
+                    ],
+                    [
+                        601,
+                        1071
+                    ]
+                ]
+            }
+        },
+        {
+            "class_name": "anchor1",
+            "golden_center": [
+                661,
+                761
+            ],
+            "error_code": "Error-Missing-anchor1",
+            "confidence_threshold": 0.5,
+            "area_of_error": {
+                "type": "polygon",
+                "coordinates": [
+                    [
+                        465,
+                        668
+                    ],
+                    [
+                        857,
+                        668
+                    ],
+                    [
+                        857,
+                        855
+                    ],
+                    [
+                        465,
+                        855
+                    ]
+                ]
+            }
+        },
+        {
+            "class_name": "anchor 3",
+            "golden_center": [
+                607,
+                371
+            ],
+            "error_code": "Error-Missing-anchor-3",
+            "confidence_threshold": 0.5,
+            "area_of_error": {
+                "type": "polygon",
+                "coordinates": [
+                    [
+                        493,
+                        262
+                    ],
+                    [
+                        720,
+                        262
+                    ],
+                    [
+                        720,
+                        481
+                    ],
+                    [
+                        493,
+                        481
+                    ]
+                ]
+            }
+        },
+        {
+            "class_name": "anchor2",
+            "golden_center": [
+                1118,
+                652
+            ],
+            "error_code": "Error-Missing-anchor2",
+            "confidence_threshold": 0.5,
+            "area_of_error": {
+                "type": "polygon",
+                "coordinates": [
+                    [
+                        1080,
+                        499
+                    ],
+                    [
+                        1157,
+                        499
+                    ],
+                    [
+                        1157,
+                        805
+                    ],
+                    [
+                        1080,
+                        805
+                    ]
+                ]
+            }
+        }
+    ],
+    "components_to_check": [
+        {
+            "class_name": "M3x6",
+            "golden_center": [
+                774,
+                1516
+            ],
+            "error_code": "Error-Missing-M3x6",
+            "confidence_threshold": 0.5,
+            "area_of_error": {
+                "type": "polygon",
+                "coordinates": [
+                    [
+                        721,
+                        1463
+                    ],
+                    [
+                        827,
+                        1463
+                    ],
+                    [
+                        827,
+                        1568
+                    ],
+                    [
+                        721,
+                        1568
+                    ]
+                ]
+            }
+        },
+        {
+            "class_name": "Connector 4P",
+            "golden_center": [
+                338,
+                811
+            ],
+            "error_code": "Error-Missing-Connector-4P",
+            "confidence_threshold": 0.5,
+            "area_of_error": {
+                "type": "polygon",
+                "coordinates": [
+                    [
+                        237,
+                        652
+                    ],
+                    [
+                        439,
+                        652
+                    ],
+                    [
+                        439,
+                        970
+                    ],
+                    [
+                        237,
+                        970
+                    ]
+                ]
+            }
+        },
+        {
+            "class_name": "Connector 2P",
+            "golden_center": [
+                343,
+                1228
+            ],
+            "error_code": "Error-Missing-Connector-2P",
+            "confidence_threshold": 0.5,
+            "area_of_error": {
+                "type": "polygon",
+                "coordinates": [
+                    [
+                        245,
+                        1145
+                    ],
+                    [
+                        440,
+                        1145
+                    ],
+                    [
+                        440,
+                        1310
+                    ],
+                    [
+                        245,
+                        1310
+                    ]
+                ]
+            }
+        },
+        {
+            "class_name": "Connector 2P",
+            "golden_center": [
+                342,
+                1058
+            ],
+            "error_code": "Error-Missing-Connector-2P",
+            "confidence_threshold": 0.5,
+            "area_of_error": {
+                "type": "polygon",
+                "coordinates": [
+                    [
+                        246,
+                        974
+                    ],
+                    [
+                        438,
+                        974
+                    ],
+                    [
+                        438,
+                        1142
+                    ],
+                    [
+                        246,
+                        1142
+                    ]
+                ]
+            }
+        },
+        {
+            "class_name": "M3x6",
+            "golden_center": [
+                773,
+                383
+            ],
+            "error_code": "Error-Missing-M3x6",
+            "confidence_threshold": 0.5,
+            "area_of_error": {
+                "type": "polygon",
+                "coordinates": [
+                    [
+                        721,
+                        327
+                    ],
+                    [
+                        825,
+                        327
+                    ],
+                    [
+                        825,
+                        440
+                    ],
+                    [
+                        721,
+                        440
+                    ]
+                ]
+            }
+        },
+        {
+            "class_name": "Connector 3P",
+            "golden_center": [
+                350,
+                1410
+            ],
+            "error_code": "Error-Missing-Connector-3P",
+            "confidence_threshold": 0.5,
+            "area_of_error": {
+                "type": "polygon",
+                "coordinates": [
+                    [
+                        273,
+                        1310
+                    ],
+                    [
+                        427,
+                        1310
+                    ],
+                    [
+                        427,
+                        1510
+                    ],
+                    [
+                        273,
+                        1510
+                    ]
+                ]
+            }
+        },
+        {
+            "class_name": "Jack 24V",
+            "golden_center": [
+                414,
+                543
+            ],
+            "error_code": "Error-Missing-Jack-24V",
+            "confidence_threshold": 0.5,
+            "area_of_error": {
+                "type": "polygon",
+                "coordinates": [
+                    [
+                        266,
+                        445
+                    ],
+                    [
+                        561,
+                        445
+                    ],
+                    [
+                        561,
+                        641
+                    ],
+                    [
+                        266,
+                        641
+                    ]
+                ]
+            }
+        }
+    ]
+}
