@@ -1,4 +1,4 @@
-#detect_kit
+# detect_kit
 **Sample**
 ```python
 from pcb_inspector import PCBInspector
@@ -6,8 +6,8 @@ from pcb_inspector import PCBInspector
 # Initialize inspector
 inspector = PCBInspector()
 
-# Inspect an image - returns dict directly
-result = inspector.inspect_pcb("path/to/pcb_image.jpg")
+# Inspect an image - returns dict and annotated image
+result, image = inspector.inspect_pcb("path/to/pcb_image.jpg")
 ```
 **Returns:**
 ```json

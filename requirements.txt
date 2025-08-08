@@ -1,6 +1,10 @@
+# PCB Inspector Dependencies
 opencv-python>=4.8.0
 ultralytics>=8.0.0
 numpy>=1.21.0
 Pillow>=9.0.0
 torch>=2.0.0
 torchvision>=0.15.0
+
+# Additional dependencies for the package
+typing-extensions>=4.0.0
