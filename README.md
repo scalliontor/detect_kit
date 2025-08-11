@@ -1,16 +1,4 @@
-# detect_kit
-
-## Enhanced PCB Inspector Module
-
-Advanced PCB inspection### Visual Output
-
-- **🔴 Red**: Missing components (40x40 pixel boxes with identifiers)
-- **📊 Clean Display**: Shows only errors, no clutter from detected components
-- **🏷️ Text Labels**: Component identifiers for precise tracking (m3x6_1, connector2p_2, etc.)smart error detection and structured output.
-
-### Quick Start
-
-**Basic Usage:**
+**Detect kit:**
 ```python
 from pcb_inspector import PCBInspector
 
@@ -25,16 +13,6 @@ if result.get('errors'):
     for error in result['errors']:
         print(f"Missing: {error['component']} ({error['identifier']})")
 ```
-
-### Testing
-
-Run the simple example:
-```bash
-cd detect_kit
-python simple_example.py
-```
-
-### Enhanced JSON Output
 
 **Returns:**
 ```json
@@ -53,15 +31,7 @@ python simple_example.py
 }
 ```
 
-### Features
-
-- **🎯 Smart Error Detection**: Intelligent component identification with distance-based analysis
-- **🎮 3-Anchor System**: Robust positioning using anchor1, anchor 3, fake
-- **🚀 GPU Acceleration**: Automatic CUDA detection and optimization
-- **� Structured Output**: Clean JSON format with component identifiers
-- **🔧 Configurable**: Modular design with flexible configuration options
-
-### Error Codes
+**Error Codes**
 
 | Code | Component | Description |
 |------|-----------|-------------|
@@ -73,36 +43,5 @@ python simple_example.py
 | Error-05-connector2p_2 | Connector 2P #2 | Missing 2-pin connector (far from anchor1) |
 | Error-07-connector3p | Connector 3P | Missing 3-pin connector |
 
-### Visual Output
 
-- **🟢 Green**: Successfully detected components
-- **🔴 Red**: Missing components (40x40 pixel boxes)
-- **� Cyan**: Anchor points and coordinate system
-- **� Text Labels**: Component identifiers for precise tracking
-
-### Testing
-
-Run the simple example:
-```bash
-cd detect_kit
-python simple_example.py
-```
-
-**Expected Output:**
-```
-🚀 Simple PCB Inspector Test
-========================================
-🔧 Testing PCB Inspector
-
-📸 Inspecting: manual_20250809_173621_794.jpg
-
-📊 Results:
-  Errors found: 2
-  🚨 Error-06-m3x6_2: Missing M3x6 (m3x6_2)
-  🚨 Error-06-m3x6_1: Missing M3x6 (m3x6_1)
-
-💾 Saved result: pcb_inspection_result.jpg
-
-✅ Test completed successfully!
-```
 
