@@ -1,0 +1,94 @@
+{
+  "anchor_system": {
+    "origin": "anchor1",
+    "reference_anchors": {
+      "anchor1": [
+        0,
+        0
+      ],
+      "anchor 3": [
+        -50,
+        2
+      ],
+      "fake": [
+        27,
+        -10
+      ]
+    }
+  },
+  "components_relative": [
+    {
+      "class_name": "M3x6",
+      "identifier": "m3x6_2",
+      "relative_vector": [
+        -49,
+        -24
+      ],
+      "confidence_threshold": 0.5
+    },
+    {
+      "class_name": "M3x6",
+      "identifier": "m3x6_1",
+      "relative_vector": [
+        95,
+        -24
+      ],
+      "confidence_threshold": 0.5
+    },
+    {
+      "class_name": "Connector 2P",
+      "identifier": "connector2p_1",
+      "relative_vector": [
+        36,
+        36
+      ],
+      "confidence_threshold": 0.5
+    },
+    {
+      "class_name": "Connector 2P",
+      "identifier": "connector2p_2",
+      "relative_vector": [
+        58,
+        37
+      ],
+      "confidence_threshold": 0.5
+    },
+    {
+      "class_name": "Connector 4P",
+      "relative_vector": [
+        6,
+        36
+      ],
+      "confidence_threshold": 0.5
+    },
+    {
+      "class_name": "Connector 3P",
+      "relative_vector": [
+        81,
+        33
+      ],
+      "confidence_threshold": 0.5
+    },
+    {
+      "class_name": "Jack 24V",
+      "relative_vector": [
+        -26,
+        26
+      ],
+      "confidence_threshold": 0.5
+    }
+  ],
+  "expected_counts": {
+    "M3x6": 2,
+    "Connector 2P": 2,
+    "Connector 4P": 1,
+    "Connector 3P": 1,
+    "Jack 24V": 1
+  },
+  "creation_info": {
+    "source_image": "manual_20250809_164141_106.jpg",
+    "created_at": "2025-08-09T16:48:50.873434",
+    "total_components": 7,
+    "anchor_count": 3
+  }
+}
