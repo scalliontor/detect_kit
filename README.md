@@ -8,14 +8,7 @@ inspector = PCBInspector()
 # Inspect an image - returns dict and annotated image
 result, annotated_image = inspector.inspect_pcb("path/to/pcb_image.jpg")
 
-# Check for errors
-if result.get('errors'):
-    for error in result['errors']:
-        print(f"Missing: {error['component']} ({error['identifier']})")
-```
-
 **Returns:**
-```json
 {
   "source_id": "camera_frame",
   "timestamp": 1723334567.123,
