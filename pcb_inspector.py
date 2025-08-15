@@ -24,7 +24,7 @@ class PCBInspector:
             template_path: Path to golden template JSON file  
         """
         self.base_path = os.path.dirname(os.path.abspath(__file__))
-        self.model_path = model_path or os.path.join(self.base_path, 'best(35).pt')
+        self.model_path = model_path or os.path.join(self.base_path, 'best(40).pt')
         self.template_path = template_path or os.path.join(self.base_path, 'golden_template_relative.json')
         
         # Load model and template
